@@ -1,5 +1,4 @@
 
-
 <div class="page-404 padding ptb-xs-40">
     <div class="container">
         <?php 
@@ -53,7 +52,7 @@
                         '".$_POST['direccion']."',
                         '".$destino."',
                         '".$_POST['horario']."',
-                        '".$_POST['id_distrito']."',
+                        '".$_POST['id_distritos']."',
                         '".$_POST['facebook']."',
                         '".$_POST['email']."',
                         '".$_POST['telefono']."'
@@ -63,7 +62,8 @@
                     echo "<script>alert('Insertado con éxito');location.href='?pag=master/asada';</script>";
                 }
         ?>
-        <center><h1>Nueva Asada </h1></center>
+        <center><h1>Nueva Asada </h1></center>   
+        <label input type="hidden" name="id_Distrito" id="id_Distrito"></label>  
             <form method="post" action="?pag=<?php echo $_GET['pag']; ?>&nuevo=1&nuevo1=1" class="form-horizontal" enctype="multipart/form-data">       
             <div class="form-group">
               <label class="col-md-4 control-label" for="textinput"> Digité el nombre:</label>  
@@ -77,15 +77,21 @@
                   <input name="nombre" type="file" placeholder="Título" class="form-control input-md" required>
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-md-4 control-label" for="textinput">Seleccione el distrito:</label>  
+
+
+
+      
+			<div class="form-group">
+              <label class="col-md-4 control-label" for="textinput">Seleccione la provincia:</label>  
               <div class="col-md-4">
-                  <select name="id_distrito"   id="select-beast"  required>
+                  <select name="id_provincia"   id="select-beast" onChange="getProvincia()"  required>
                     <option value="" selected>Seleccionar</option>
                     <?php 
-                      $sth = mysqli_query($link,"SELECT CONCAT(loc_provincia.nombre,' -> ', loc_canton.nombre ,' -> ',loc_distrito.nombre) as ubicacion, loc_distrito.id_distrito as codigo FROM loc_canton,loc_distrito,loc_provincia WHERE loc_canton.id_provincia = loc_provincia.id_provincia and loc_distrito.id_canton = loc_canton.id_canton ORDER by loc_provincia.nombre, loc_canton.nombre, loc_distrito.nombre DESC");
-                        while($r = mysqli_fetch_assoc($sth)) {
-                            echo '<option value="'.$r['codigo'].'">'.$r['ubicacion'].'</option>';
+                    $provincias = array();
+						$sql=mysqli_query($link, "SELECT nombre, id_provincia FROM loc_provincia");
+                        while($r = mysqli_fetch_assoc($sql)) {
+                            echo '<option value="'.$r['id_provincia'].'">'.$r['nombre'].'</option>';
+                            $provincias[] = array($r['id_provincia'], $r['nombre']);
                         }
                       ?>
                   </select>
@@ -96,7 +102,56 @@
                     });
                   </script>
               </div>
-            </div>
+            </div>	
+
+            <?php 
+                    $cantones = array();;
+					        	$sql2=mysqli_query($link, "SELECT nombre, id_canton, id_provincia FROM loc_canton");
+                        while($r2 = mysqli_fetch_assoc($sql2)) {
+                            $cantones[] = array($r2['id_provincia'], $r2['id_canton'], $r2['nombre']);
+                        }
+                      ?>
+
+              <?php 
+                    $distritos = array();;
+					        	$sql3=mysqli_query($link, "SELECT nombre, id_canton, id_distrito FROM loc_distrito");
+                        while($r3 = mysqli_fetch_assoc($sql3)) {
+                            $distritos[] = array($r3['id_canton'], $r3['id_distrito'], $r3['nombre']);
+                        }
+                      ?>
+
+
+
+            <div class="form-group">
+              <label class="col-md-4 control-label" for="textinput">Seleccione el canton:</label>  
+              <div class="col-md-4">
+                  <select name="id_canton"   id="cantones" onChange="getCanton()"  required>
+                    <option value="" selected>Seleccionar</option>
+                  </select>
+                  <script>
+                    $('#select-beast2').selectize({
+                        create: false,
+                        sortField: 'text'
+                    });
+                  </script>
+              </div>
+                  </div>
+
+              <div class="form-group">
+              <label class="col-md-4 control-label" for="textinput">Seleccione el distrito:</label>  
+              <div class="col-md-4">
+                  <select name="id_distritos"   id="distritos" onChange="getDistrito()"  required>
+                    <option value="" selected>Seleccionar</option>
+                  </select>
+                  <script>
+                    $('#select-beast3').selectize({
+                        create: false,
+                        sortField: 'text'
+                    });
+                  </script>
+              </div>
+                  </div>
+
             <div class="form-group">
               <label class="col-md-4 control-label" for="textinput">Digité la dirección exacta:</label>  
               <div class="col-md-4">
@@ -193,7 +248,7 @@
                         `redes`         ='".$_POST['redes']."',
                         `email`         ='".$_POST['email']."',
                         `telefono`      ='".$_POST['telefono']."',
-                        `id_distrito`   ='".$_POST['id_distrito']."'
+                        `id_distrito`   ='".$_POST['id_distritos']."'
                     WHERE 
                     `id_asada`='".$_GET['editar']."'";
                     
@@ -371,6 +426,60 @@
 
 <script src="https://nosir.github.io/cleave.js/dist/cleave.min.js"></script>
 <script>
+  var idProvincia = "";
+  var idCanton = "";
+  var idDistrito = "";
+
+  function getProvincia() {
+    var e = document.getElementById("select-beast");
+    idProvincia = e.options[e.selectedIndex].value;
+    var cantonesArray = <?php echo json_encode($cantones); ?>;
+    var cont = 0;
+    var select = document.getElementById("cantones");
+    select.options.length = 0;
+    for(i = 0; i < cantonesArray.length; i++)
+    {
+      if(cantonesArray[i][0] == idProvincia)
+      {
+
+        cont = cont + 1;
+
+        var select = document.getElementById("cantones");
+        select.options[select.options.length] = new Option(cantonesArray[i][2], cantonesArray[i][1]);
+      }
+    }
+    document.getElementById('prueba2').innerHTML = cont;
+        }
+
+
+  function getCanton() {
+    var e = document.getElementById("cantones");
+    idCanton = e.options[e.selectedIndex].value;
+    var distritosArray = <?php echo json_encode($distritos); ?>;
+    var cont = 0;
+    var select = document.getElementById("distritos");
+    select.options.length = 0;
+    for(i = 0; i < distritosArray.length; i++)
+    {
+      if(distritosArray[i][0] == idCanton)
+      {
+
+        cont = cont + 1;
+        var select = document.getElementById("distritos");
+        select.options[select.options.length] = new Option(distritosArray[i][2], distritosArray[i][1]);
+      }
+    }
+        }     
+
+
+    function getDistrito() {
+    var e = document.getElementById("distritos");
+    idDistritos = e.options[e.selectedIndex].value;
+    document.getElementById('id_Distrito').innerHTML = idDistritos;
+        }  
+
+
+
     var cleave = new Cleave('#cedula', {
         prefix: '',
         delimiter: '-',
